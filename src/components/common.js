@@ -32,6 +32,9 @@ config.ASSETS_URL = process.env.ASSETS_URL || config.BASE_URL + "/public";
 config.ASSETS_DIR = process.env.ASSETS_DIR || path.join(config.WORK_DIR, "/public");
 config.HMAC_SECRET = process.env.HMAC_SECRET || "ThisIsADefaultSecretPhrase";
 
+config.AES_SECRET_KEY = process.env.AES_SECRET_KEY || "ThisIsADefaultSecretPhrase";
+config.AES_SECRET_IV = process.env.AES_SECRET_IV || "ThisIsADefaultSecretPhrase";
+
 // Server.UserHash
 config.HASH_ID_SALT_1 = process.env.HASH_ID_SALT_1;
 config.HASH_ID_SALT_2 = process.env.HASH_ID_SALT_2;
@@ -252,6 +255,37 @@ const parsePhone = (phoneStr, options = {}) => {
     return phone;
 };
 
+const aesKey = crypto.createHash("sha512").update(config.AES_SECRET_KEY).digest().subarray(0, 32); // 32 bytes
+const aesEncryptionIV = crypto.createHash("sha512").update(config.AES_SECRET_IV).digest().subarray(0, 12); // 12 bytes
+const aad = Buffer.from("optional-aad");
+
+// Encrypt data
+const aesEncryptData = (data) => {
+    const cipher = crypto.createCipheriv("aes-256-ccm", aesKey, aesEncryptionIV, { authTagLength: 16 });
+    cipher.setAAD(aad, { plaintextLength: Buffer.byteLength(data) });
+
+    const encrypted = Buffer.concat([cipher.update(data, "utf8"), cipher.final()]);
+    const authTag = cipher.getAuthTag();
+
+    // Combine encrypted data and tag
+    return Buffer.concat([encrypted, authTag]).toString("base64");
+};
+
+// Decrypt data
+const aesDecryptData = (encryptedData) => {
+    const data = Buffer.from(encryptedData, "base64");
+
+    const encrypted = data.subarray(0, data.length - 16);
+    const authTag = data.subarray(data.length - 16);
+
+    const decipher = crypto.createDecipheriv("aes-256-ccm", aesKey, aesEncryptionIV, { authTagLength: 16 });
+    decipher.setAAD(aad, { plaintextLength: encrypted.length });
+    decipher.setAuthTag(authTag);
+
+    const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+    return decrypted.toString("utf8");
+};
+
 module.exports = {
     config: config,
     sleep: sleep,
@@ -264,4 +298,6 @@ module.exports = {
     validateReq,
     parsePhone: parsePhone,
     newRequestId: nanoId.customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 24),
+    aesEncryptData,
+    aesDecryptData,
 };

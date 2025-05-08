@@ -5,11 +5,12 @@ const APIError = require("./api_error");
 const logger = require("../logger");
 
 class Middlewares {
-    constructor({ components, services, server, logger }) {
+    constructor({ components, services, server, logger, rateLimit }) {
         this.components = components;
         this.services = services;
         this.logger = logger;
         this.server = server;
+        this.rateLimit = rateLimit;
 
         this.authClientWebLogin = this.server.handleAsync(async (req, res, next) => {
             // Get credential
