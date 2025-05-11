@@ -1,18 +1,28 @@
 "use strict";
 const rateLimit = require("express-rate-limit");
-const { RESPONSE_ERROR_BAD_REQUEST } = require("../constants");
 const { aesDecryptData } = require("../components/common");
 
 class RateLimit {
     constructor() {
-        const rateLimitkeyGenerator = (req) => {
-            const decryptedIp = aesDecryptData(req?.query?.ip);
-            console.log(`encryptedData = ${req?.query?.ip}, decryptedData = ${decryptedIp}`);
-            return decryptedIp;
+        const rateLimitkeyGenerator = async (req) => {
+            try {
+                const decodedIp = decodeURIComponent(req?.query?.ip);
+                const decryptedIp = await aesDecryptData(decodedIp);
+                return decryptedIp;
+            } catch (err) {
+                console.error(`Error in rateLimitkeyGenerator. Error = ${err}`);
+                return req?.query?.ip;
+            }
         };
-        const rateLimitStatusCode = RESPONSE_ERROR_BAD_REQUEST;
-        const rateLimitHandler = (req, res) => {
-            res.status(rateLimitStatusCode).json({
+
+        const rateLimitHandler = async (req, res) => {
+            const decodedIp = decodeURIComponent(req?.query?.ip);
+            const decryptedIp = await aesDecryptData(decodedIp);
+
+            console.log(`RateLimitHandler triggered from IP = ${decryptedIp}`);
+            res.status(200).json({
+                success: false,
+                code: "GENERAL_ERROR",
                 message: "Something went wrong",
             });
         };

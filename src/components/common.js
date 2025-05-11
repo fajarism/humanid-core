@@ -255,35 +255,36 @@ const parsePhone = (phoneStr, options = {}) => {
     return phone;
 };
 
-const aesKey = crypto.createHash("sha512").update(config.AES_SECRET_KEY).digest().subarray(0, 32); // 32 bytes
-const aesEncryptionIV = crypto.createHash("sha512").update(config.AES_SECRET_IV).digest().subarray(0, 12); // 12 bytes
-const aad = Buffer.from("optional-aad");
-
-// Encrypt data
-const aesEncryptData = (data) => {
-    const cipher = crypto.createCipheriv("aes-256-ccm", aesKey, aesEncryptionIV, { authTagLength: 16 });
-    cipher.setAAD(aad, { plaintextLength: Buffer.byteLength(data) });
-
-    const encrypted = Buffer.concat([cipher.update(data, "utf8"), cipher.final()]);
-    const authTag = cipher.getAuthTag();
-
-    // Combine encrypted data and tag
-    return Buffer.concat([encrypted, authTag]).toString("base64");
-};
+const aad = Buffer.from("");
 
 // Decrypt data
-const aesDecryptData = (encryptedData) => {
-    const data = Buffer.from(encryptedData, "base64");
+const aesDecryptData = async (encryptedData) => {
+    const ivLength = 12;
+    const tagLength = 16;
 
-    const encrypted = data.subarray(0, data.length - 16);
-    const authTag = data.subarray(data.length - 16);
+    const raw = Buffer.from(encryptedData, "base64");
+    const iv = raw.subarray(0, ivLength);
+    const tag = raw.subarray(ivLength, ivLength + tagLength);
+    const ciphertext = raw.subarray(ivLength + tagLength);
+    const key = Buffer.from(process.env.AES_SECRET_KEY, "hex");
 
-    const decipher = crypto.createDecipheriv("aes-256-ccm", aesKey, aesEncryptionIV, { authTagLength: 16 });
-    decipher.setAAD(aad, { plaintextLength: encrypted.length });
-    decipher.setAuthTag(authTag);
+    try {
+        const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv, {
+            authTagLength: tagLength,
+        });
 
-    const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
-    return decrypted.toString("utf8");
+        if (aad) {
+            decipher.setAAD(Buffer.from(aad), { plaintextLength: ciphertext.length });
+        }
+
+        decipher.setAuthTag(tag);
+        const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+
+        return decrypted.toString("utf-8");
+    } catch (err) {
+        console.error("Decryption failed:", err.message);
+        return null;
+    }
 };
 
 module.exports = {
@@ -298,6 +299,5 @@ module.exports = {
     validateReq,
     parsePhone: parsePhone,
     newRequestId: nanoId.customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 24),
-    aesEncryptData,
     aesDecryptData,
 };
