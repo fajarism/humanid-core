@@ -33,7 +33,6 @@ config.ASSETS_DIR = process.env.ASSETS_DIR || path.join(config.WORK_DIR, "/publi
 config.HMAC_SECRET = process.env.HMAC_SECRET || "ThisIsADefaultSecretPhrase";
 
 config.AES_SECRET_KEY = process.env.AES_SECRET_KEY || "ThisIsADefaultSecretPhrase";
-config.AES_SECRET_IV = process.env.AES_SECRET_IV || "ThisIsADefaultSecretPhrase";
 
 // Server.UserHash
 config.HASH_ID_SALT_1 = process.env.HASH_ID_SALT_1;
