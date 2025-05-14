@@ -265,7 +265,7 @@ const aesDecryptData = async (encryptedData) => {
     const iv = raw.subarray(0, ivLength);
     const tag = raw.subarray(ivLength, ivLength + tagLength);
     const ciphertext = raw.subarray(ivLength + tagLength);
-    const key = Buffer.from(process.env.AES_SECRET_KEY, "hex");
+    const key = Buffer.from(config.AES_SECRET_KEY, "hex");
 
     try {
         const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv, {

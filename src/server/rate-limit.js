@@ -20,7 +20,7 @@ class RateLimit {
             const decryptedIp = await aesDecryptData(decodedIp);
 
             console.log(`RateLimitHandler triggered from IP = ${decryptedIp}`);
-            res.status(200).json({
+            res.status(400).json({
                 success: false,
                 code: "GENERAL_ERROR",
                 message: "Something went wrong",
