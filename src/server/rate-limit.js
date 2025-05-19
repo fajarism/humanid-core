@@ -11,20 +11,29 @@ class RateLimit {
                 return decryptedIp;
             } catch (err) {
                 console.error(`Error in rateLimitkeyGenerator. Error = ${err}`);
-                return req?.query?.ip;
+                throw Error("Something went wrong");
             }
         };
 
         const rateLimitHandler = async (req, res) => {
-            const decodedIp = decodeURIComponent(req?.query?.ip);
-            const decryptedIp = await aesDecryptData(decodedIp);
+            try {
+                const decodedIp = decodeURIComponent(req?.query?.ip);
+                const decryptedIp = await aesDecryptData(decodedIp);
 
-            console.log(`RateLimitHandler triggered from IP = ${decryptedIp}`);
-            res.status(400).json({
-                success: false,
-                code: "GENERAL_ERROR",
-                message: "Something went wrong",
-            });
+                console.log(`RateLimitHandler triggered from IP = ${decryptedIp}`);
+                res.status(400).json({
+                    success: false,
+                    code: "GENERAL_ERROR",
+                    message: "Something went wrong",
+                });
+            } catch (err) {
+                console.error(`Error in rateLimitHandler. Error = ${err}`);
+                res.status(400).json({
+                    success: false,
+                    code: "GENERAL_ERROR",
+                    message: "Something went wrong",
+                });
+            }
         };
 
         this.otpRateLimit = () => {

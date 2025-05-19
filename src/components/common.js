@@ -282,7 +282,7 @@ const aesDecryptData = async (encryptedData) => {
         return decrypted.toString("utf-8");
     } catch (err) {
         console.error("Decryption failed:", err.message);
-        return null;
+        throw err;
     }
 };
 
