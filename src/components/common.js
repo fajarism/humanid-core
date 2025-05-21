@@ -32,6 +32,8 @@ config.ASSETS_URL = process.env.ASSETS_URL || config.BASE_URL + "/public";
 config.ASSETS_DIR = process.env.ASSETS_DIR || path.join(config.WORK_DIR, "/public");
 config.HMAC_SECRET = process.env.HMAC_SECRET || "ThisIsADefaultSecretPhrase";
 
+config.AES_SECRET_KEY = process.env.AES_SECRET_KEY || "ThisIsADefaultSecretPhrase";
+
 // Server.UserHash
 config.HASH_ID_SALT_1 = process.env.HASH_ID_SALT_1;
 config.HASH_ID_SALT_2 = process.env.HASH_ID_SALT_2;
@@ -252,6 +254,38 @@ const parsePhone = (phoneStr, options = {}) => {
     return phone;
 };
 
+const aad = Buffer.from("");
+
+// Decrypt data
+const aesDecryptData = async (encryptedData) => {
+    const ivLength = 12;
+    const tagLength = 16;
+
+    const raw = Buffer.from(encryptedData, "base64");
+    const iv = raw.subarray(0, ivLength);
+    const tag = raw.subarray(ivLength, ivLength + tagLength);
+    const ciphertext = raw.subarray(ivLength + tagLength);
+    const key = Buffer.from(config.AES_SECRET_KEY, "hex");
+
+    try {
+        const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv, {
+            authTagLength: tagLength,
+        });
+
+        if (aad) {
+            decipher.setAAD(Buffer.from(aad), { plaintextLength: ciphertext.length });
+        }
+
+        decipher.setAuthTag(tag);
+        const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+
+        return decrypted.toString("utf-8");
+    } catch (err) {
+        console.error("Decryption failed:", err.message);
+        throw err;
+    }
+};
+
 module.exports = {
     config: config,
     sleep: sleep,
@@ -264,4 +298,5 @@ module.exports = {
     validateReq,
     parsePhone: parsePhone,
     newRequestId: nanoId.customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 24),
+    aesDecryptData,
 };

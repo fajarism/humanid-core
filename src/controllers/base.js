@@ -13,6 +13,7 @@ class BaseController {
             this.components = args.components;
             this.services = args.services;
             this.middlewares = args.middlewares;
+            this.rateLimit = args.rateLimit;
 
             // Set server functions
             this.handleRESTAsync = args.server.handleRESTAsync;

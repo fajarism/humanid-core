@@ -30,6 +30,7 @@ const ConsoleController = require("./controllers/console"),
     WebLoginController = require("./controllers/web-login");
 
 const Middlewares = require("./server/middlewares");
+const RateLimit = require("./server/rate-limit");
 
 class Server {
     constructor({ config, components, models, services, logger }) {
@@ -78,6 +79,7 @@ class Server {
                 sendErrorResponse: this.sendErrorResponse,
             },
             services: this.services,
+            rateLimit: new RateLimit(),
         };
 
         // Middlewares

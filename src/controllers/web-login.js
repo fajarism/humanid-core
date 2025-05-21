@@ -65,6 +65,7 @@ class WebLoginController extends BaseController {
 
         this.router.post(
             "/users/request-otp",
+            this.middlewares.rateLimit.otpRateLimit(),
             this.middlewares.authClientWebLogin,
             this.handleRESTAsync(async (req) => {
                 // Validate request
